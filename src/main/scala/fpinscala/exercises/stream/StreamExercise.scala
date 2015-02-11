@@ -3,14 +3,18 @@ package fpinscala.exercises.stream
 sealed trait Stream[+A] {
   import Stream._
 
+  def head: A
+  def tail: Stream[A]
+  def isEmpty: Boolean
+
   def toList: List[A] = this match {
     case Cons(hd, tl) => hd() :: tl().toList
     case _ => List()
   }
-  def map[B](f: A => B): Stream[B] = this match {
-    case Cons(hd, tl) => cons(f(hd()),  tl().map(f))
-    case _ => empty
-  }
+  def map[B](f: A => B): Stream[B] =
+    if (isEmpty) empty
+    else cons(f(head), tail.map(f))
+
   def filter(pred: A => Boolean): Stream[A] = this match {
     case Cons(hd, tl) =>
       println("filter")
@@ -33,10 +37,16 @@ sealed trait Stream[+A] {
 }
 
 case object Empty extends Stream[Nothing] {
+  val isEmpty = true
+  def head: Nothing = throw new NoSuchElementException
+  def tail: Stream[Nothing] = throw new NoSuchElementException
   override def toString: String = "Stream()"
 }
 
 case class Cons[+A](hd: ()=>A, tl: ()=>Stream[A]) extends Stream[A] {
+  val isEmpty = false
+  def head: A = hd()
+  def tail: Stream[A] = tl()
   override def toString: String = "Stream("+ hd() +", ?)"
 }
 
@@ -61,6 +71,11 @@ object StreamExercise extends App {
   val n = 3
 
   val s = Stream(1,2).append(Stream(3, 4))
-  val s2 = s.flatMap(n => Stream(n))
+  val s2 = s.map(n => n + 1)
   println(s2.toList)
+
+  val s3: Stream[Int] =
+    for (a <- Stream(1,2); b <- Stream(3,4)) yield a + b
+  println(s3)
+  println(s3.toList)
 }
